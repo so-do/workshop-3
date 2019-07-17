@@ -3,15 +3,6 @@
 
 KUBERNETES_VERSION = ENV['KUBERNETES_VERSION'] || "1.11.4"
 
-# Common installation script
-$installer = <<SCRIPT
-#!/bin/bash
-
-# Update apt and get dependencies
-sudo apt-get -y update
-sudo apt-get install -y zip unzip curl wget socat ebtables git vim tmux mc
-SCRIPT
-
 $docker = <<SCRIPT
 #!/bin/bash
 
@@ -22,6 +13,22 @@ sudo apt-get install -y docker-ce=17.03.3~ce-0~ubuntu-$(lsb_release -cs)
 sudo systemctl start docker
 sudo usermod -a -G docker vagrant
 SCRIPT
+
+
+# Common installation script
+$installer = <<SCRIPT
+#!/bin/bash
+
+# Update apt and get dependencies
+sudo apt-get -y update
+sudo apt-get install -y zip unzip curl wget socat ebtables git vim tmux mc htop
+
+docker pull redis
+
+git clone https://github.com/so-do/workshop-3.git
+git clone https://github.com/kubernetes-sigs/kubespray.git
+SCRIPT
+
 
 $minikubescript = <<SCRIPT
 #!/bin/bash
@@ -46,6 +53,8 @@ sudo mv crictl /usr/local/bin/
 # Install helm
 curl -qL https://get.helm.sh/helm-v2.14.2-linux-amd64.tar.gz 2>/dev/null | tar xzvf -
 sudo mv linux-amd64/helm /usr/local/bin/helm
+sudo mv linux-amd64/tiller /usr/local/bin/tiller
+rm -rf linux-amd64
 
 #Setup minikube
 echo "127.0.0.1 minikube minikube." | sudo tee -a /etc/hosts
@@ -137,10 +146,11 @@ Vagrant.configure("2") do |config|
   # via 127.0.0.1 to disable public access
   config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
   config.vm.network "forwarded_port", guest: 443, host: 8443, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 30000, host: 30000, host_ip: "127.0.0.1"
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
+  config.vm.network "private_network", ip: "192.168.33.10"
 
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
@@ -157,13 +167,13 @@ Vagrant.configure("2") do |config|
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-  # config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb|
   #   # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
+    vb.memory = "2048"
+  end
   #
   # View the documentation for the provider you are using for more
   # information on available options.
