@@ -98,7 +98,7 @@ sudo chown -R $USER:$USER $HOME/.minikube
 
 # Enforce sysctl 
 sudo sysctl -w vm.max_map_count=262144
-sudo echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.d/90-vm_max_map_count.conf
+echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.d/90-vm_max_map_count.conf
 
 SCRIPT
 
